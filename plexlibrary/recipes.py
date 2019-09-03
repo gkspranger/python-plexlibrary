@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+recipes module
+"""
 import glob
 import os
 
@@ -6,11 +9,12 @@ from utils import YAMLBase
 
 
 class RecipeParser(YAMLBase):
+    """
+    RecipeParser class
+    """
     def __init__(self, name, directory=None):
-        # TODO accept filename
         self.name = os.path.splitext(name)[0]
-        recipe_file = self.name + '.yml'  # TODO support .yaml
-        # FIXME?
+        recipe_file = self.name + '.yml'
         if not directory:
             parent_dir = os.path.abspath(
                 os.path.join(os.path.dirname(__file__), os.path.pardir))
@@ -21,10 +25,16 @@ class RecipeParser(YAMLBase):
         super(RecipeParser, self).__init__(filepath)
 
     def dump(self):
+        """
+        show all the data we have
+        """
         print(self.data)
 
 
 def get_recipes(directory=None):
+    """
+    get all valid recipes
+    """
     if not directory:
         parent_dir = os.path.abspath(
             os.path.join(os.path.dirname(__file__), os.path.pardir))
@@ -32,7 +42,7 @@ def get_recipes(directory=None):
 
     recipes = []
     for path in glob.glob(os.path.join(directory, '*.yml')):
-        d, filename = os.path.split(path)
+        _, filename = os.path.split(path)
         recipe_name = os.path.splitext(filename)[0]
         recipes.append(recipe_name)
     recipes.sort()

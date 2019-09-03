@@ -89,69 +89,65 @@ class Trakt():
         if max_age != 0:
             data['extended'] = 'full'
         movie_data = self._handle_request('get', url, data=data)
-        for m in movie_data:
-            if 'movie' not in m:
-                m['movie'] = m
+        for meta in movie_data:
+            if 'movie' not in meta:
+                meta['movie'] = meta
             # Skip already added movies
-            if m['movie']['ids']['imdb'] in movie_ids:
+            if meta['movie']['ids']['imdb'] in movie_ids:
                 continue
-            if not m['movie']['year']:
+            if not meta['movie']['year']:
                 continue
             # Skip old movies
             if max_age != 0 \
                     and (max_date > datetime.datetime.strptime(
-                            m['movie']['released'], '%Y-%m-%d')):
+                            meta['movie']['released'], '%Y-%m-%d')):
                 continue
             movie_list.append({
-                'id': m['movie']['ids']['imdb'],
-                'tmdb_id': m['movie']['ids'].get('tmdb', ''),
-                'title': m['movie']['title'],
-                'year': m['movie']['year'],
+                'id': meta['movie']['ids']['imdb'],
+                'tmdb_id': meta['movie']['ids'].get('tmdb', ''),
+                'title': meta['movie']['title'],
+                'year': meta['movie']['year'],
             })
-            movie_ids.append(m['movie']['ids']['imdb'])
-            if m['movie']['ids'].get('tmdb'):
-                movie_ids.append('tmdb' + str(m['movie']['ids']['tmdb']))
+            movie_ids.append(meta['movie']['ids']['imdb'])
+            if meta['movie']['ids'].get('tmdb'):
+                movie_ids.append('tmdb' + str(meta['movie']['ids']['tmdb']))
 
         return movie_list, movie_ids
 
-    def add_shows(self, url, show_list=None, show_ids=None, max_age=0):
+    def add_shows(self, url, show_list=[], show_ids=[], max_age=0):
         """
         add shows to list
         """
-        if not show_list:
-            show_list = []
-        if not show_ids:
-            show_ids = []
         curyear = datetime.datetime.now().year
         print(u"Retrieving the trakt list: {}".format(url))
         data = {}
         if max_age != 0:
             data['extended'] = 'full'
         show_data = self._handle_request('get', url, data=data)
-        for m in show_data:
-            if 'show' not in m:
-                m['show'] = m
+        for meta in show_data:
+            if 'show' not in meta:
+                meta['show'] = meta
             # Skip already added shows
-            if m['show']['ids']['imdb'] in show_ids:
+            if meta['show']['ids']['imdb'] in show_ids:
                 continue
-            if not m['show']['year']:
+            if not meta['show']['year']:
                 continue
             # Skip old shows
             if max_age != 0 \
-                    and (curyear - (max_age - 1)) > int(m['show']['year']):
+                    and (curyear - (max_age - 1)) > int(meta['show']['year']):
                 continue
             show_list.append({
-                'id': m['show']['ids']['imdb'],
-                'tmdb_id': m['show']['ids'].get('tmdb', ''),
-                'tvdb_id': m['show']['ids'].get('tvdb', ''),
-                'title': m['show']['title'],
-                'year': m['show']['year'],
+                'id': meta['show']['ids']['imdb'],
+                'tmdb_id': meta['show']['ids'].get('tmdb', ''),
+                'tvdb_id': meta['show']['ids'].get('tvdb', ''),
+                'title': meta['show']['title'],
+                'year': meta['show']['year'],
             })
-            show_ids.append(m['show']['ids']['imdb'])
-            if m['show']['ids'].get('tmdb'):
-                show_ids.append('tmdb' + str(m['show']['ids']['tmdb']))
-            if m['show']['ids'].get('tvdb'):
-                show_ids.append('tvdb' + str(m['show']['ids']['tvdb']))
+            show_ids.append(meta['show']['ids']['imdb'])
+            if meta['show']['ids'].get('tmdb'):
+                show_ids.append('tmdb' + str(meta['show']['ids']['tmdb']))
+            if meta['show']['ids'].get('tvdb'):
+                show_ids.append('tvdb' + str(meta['show']['ids']['tvdb']))
         return show_list, show_ids
 
     def add_items(self, item_type, url, item_list=None, item_ids=None,

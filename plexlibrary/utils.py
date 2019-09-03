@@ -28,11 +28,11 @@ class YAMLBase():
 
         yaml = ruamel.yaml.YAML()
         yaml.preserve_quotes = True
-        with open(self.filename, 'r') as f:
+        with open(self.filename, 'r') as myfile:
             try:
-                self.data = yaml.load(f)
-            except ruamel.yaml.YAMLError as e:
-                raise e
+                self.data = yaml.load(myfile)
+            except ruamel.yaml.YAMLError as err:
+                raise err
 
     def __getitem__(self, k):
         return self.data[k]
@@ -40,21 +40,30 @@ class YAMLBase():
     def __iter__(self):
         return self.data.itervalues()
 
-    def __setitem__(self, k, v):
-        self.data[k] = v
+    def __setitem__(self, key, value):
+        self.data[key] = value
 
-    def get(self, k, default=None):
-        if k in self.data:
-            return self.data[k]
+    def get(self, key, default=None):
+        """
+        get the media item
+        """
+        if key in self.data:
+            return self.data[key]
 
         return default
 
     def save(self):
+        """
+        save the changes you just made
+        """
         yaml = ruamel.yaml.YAML()
-        with open(self.filename, 'w') as f:
-            yaml.dump(self.data, f)
+        with open(self.filename, 'w') as myfile:
+            yaml.dump(self.data, myfile)
 
 def add_years(years, from_date=None):
+    """
+    include the years you want to search
+    """
     if from_date is None:
         from_date = datetime.now()
     try:

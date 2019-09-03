@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
+"""
+PlexUtils module
+"""
 import plexapi.server
 import requests
 
-
-class Plex(object):
+class Plex():
+    """
+    Plex class
+    """
     def __init__(self, baseurl, token):
         self.baseurl = baseurl
         self.token = token
@@ -15,6 +20,9 @@ class Plex(object):
                 base_url=baseurl))
 
     def create_new_library(self, name, folder, library_type='movie'):
+        """
+        create a whole new lib
+        """
         headers = {"X-Plex-Token": self.token}
         params = {
             'name': name,
@@ -37,6 +45,9 @@ class Plex(object):
 
     def set_sort_title(self, library_key, rating_key, number, title,
                        library_type, title_format, visible=False):
+        """
+        define and set the sorting title
+        """
         headers = {'X-Plex-Token': self.token}
         if library_type == 'movie':
             search_type = 1
@@ -59,5 +70,5 @@ class Plex(object):
             params['title.locked'] = 0
 
         url = "{base_url}/library/sections/{library}/all".format(
-                base_url=self.baseurl, library=library_key)
+            base_url=self.baseurl, library=library_key)
         requests.put(url, headers=headers, params=params)

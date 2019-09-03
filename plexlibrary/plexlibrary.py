@@ -22,11 +22,17 @@ import recipes
 from recipe import Recipe
 
 def list_recipes(directory=None):
+    """
+    list all the recipes available
+    """
     print("Available recipes:")
     for name in recipes.get_recipes(directory):
         print("    {}".format(name))
 
 def main():
+    """
+    this is the main function that starts everything
+    """
     parser = argparse.ArgumentParser(
         prog='plexlibrary',
         description=("This utility creates or maintains a Plex library "
@@ -55,8 +61,8 @@ def main():
         list_recipes()
         sys.exit(1)
 
-    r = Recipe(args.recipe)
-    r.run(args.sort_only)
+    recipe = Recipe(args.recipe)
+    recipe.run(args.sort_only)
 
     print("Done!")
 

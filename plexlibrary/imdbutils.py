@@ -1,23 +1,24 @@
 # -*- coding: utf-8 -*-
+"""
+IMDB utils module
+"""
 import datetime
-
 import requests
 from lxml import html
-
 from utils import add_years
 
-
-class IMDb(object):
+class IMDb():
+    """
+    IMDb class
+    """
     def __init__(self, tmdb, tvdb):
         self.tmdb = tmdb
         self.tvdb = tvdb
 
-    def _handle_request(self, url):
-        """Stolen from Automated IMDB Top 250 Plex library script
-           by /u/SwiftPanda16
-        """
-        r = requests.get(url)
-        tree = html.fromstring(r.content)
+    @classmethod
+    def _handle_request(cls, url):
+        resp = requests.get(url)
+        tree = html.fromstring(resp.content)
 
         # Dict of the IMDB top 250 ids in order
         titles = tree.xpath("//table[contains(@class, 'chart')]"
@@ -30,6 +31,9 @@ class IMDb(object):
         return ids, titles, years
 
     def add_movies(self, url, movie_list=None, movie_ids=None, max_age=0):
+        """
+        add movies to your list
+        """
         if not movie_list:
             movie_list = []
         if not movie_ids:
@@ -51,7 +55,7 @@ class IMDb(object):
                                                   '%Y-%m-%d')
             elif imdb_years[i]:
                 date = datetime.datetime(int(str(imdb_years[i]).strip("()")),
-                                     12, 31)
+                                         12, 31)
             else:
                 date = datetime.date.today()
 
@@ -70,11 +74,10 @@ class IMDb(object):
 
         return movie_list, movie_ids
 
-    def add_shows(self, url, show_list=None, show_ids=None, max_age=0):
-        if not show_list:
-            show_list = []
-        if not show_ids:
-            show_ids = []
+    def add_shows(self, url, show_list=[], show_ids=[], max_age=0):
+        """
+        add a show to the list of shows
+        """
         curyear = datetime.datetime.now().year
         print(u"Retrieving the IMDb list: {}".format(url))
         data = {}
@@ -130,9 +133,13 @@ class IMDb(object):
 
     def add_items(self, item_type, url, item_list=None, item_ids=None,
                   max_age=0):
+        """
+        add items to the list
+        """
         if item_type == 'movie':
             return self.add_movies(url, movie_list=item_list,
                                    movie_ids=item_ids, max_age=max_age)
-        elif item_type == 'tv':
+        if item_type == 'tv':
             return self.add_shows(url, show_list=item_list,
                                   show_ids=item_ids, max_age=max_age)
+        return None

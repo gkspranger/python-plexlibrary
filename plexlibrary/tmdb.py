@@ -164,14 +164,14 @@ class TMDb():
         url = "https://api.themoviedb.org/3/find/{imdb_id}".format(
             imdb_id=imdb_id)
 
-        r = requests.get(url, params=params)
+        resp = requests.get(url, params=params)
 
         self.request_count += 1
 
         media_result = None
 
-        if r.status_code == 200:
-            item = json.loads(r.text)
+        if resp.status_code == 200:
+            item = json.loads(resp.text)
 
             if library_type == 'movie':
                 if item and item.get('movie_results'):
