@@ -21,12 +21,10 @@ import sys
 import recipes
 from recipe import Recipe
 
-
 def list_recipes(directory=None):
     print("Available recipes:")
     for name in recipes.get_recipes(directory):
         print("    {}".format(name))
-
 
 def main():
     parser = argparse.ArgumentParser(

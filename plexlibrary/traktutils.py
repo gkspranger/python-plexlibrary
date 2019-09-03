@@ -7,8 +7,10 @@ import trakt
 
 from utils import add_years
 
-
-class Trakt(object):
+class Trakt():
+    """
+    Trakt class
+    """
     def __init__(self, username, client_id='', client_secret='',
                  oauth_token='', oauth=False, config=None):
         self.config = config
@@ -27,6 +29,9 @@ class Trakt(object):
         self.trakt_core = trakt.core.Core()
 
     def oauth_auth(self):
+        """
+        verify authentication via oauth
+        """
         store = False
         self.oauth_token = trakt.core.oauth_auth(
             self.username, client_id=self.client_id,
@@ -66,10 +71,10 @@ class Trakt(object):
                 self.oauth_auth()
                 return self._handle_request(method, url, data)
             raise self.trakt_core.error_map[response.status_code]()
-        elif response.status_code == 204:  # HTTP no content
+        if response.status_code == 204:  # HTTP no content
             return None
-        json_data = json.loads(response.content.decode('UTF-8', 'ignore'))
-        return json_data
+
+        return json.loads(response.content.decode('UTF-8', 'ignore'))
 
     def add_movies(self, url, movie_list=None, movie_ids=None, max_age=0):
         if not movie_list:
@@ -88,7 +93,7 @@ class Trakt(object):
             # Skip already added movies
             if m['movie']['ids']['imdb'] in movie_ids:
                 continue
-            if not m['movie']['year']:  # TODO: Handle this better?
+            if not m['movie']['year']:
                 continue
             # Skip old movies
             if max_age != 0 \
@@ -142,7 +147,6 @@ class Trakt(object):
                 show_ids.append('tmdb' + str(m['show']['ids']['tmdb']))
             if m['show']['ids'].get('tvdb'):
                 show_ids.append('tvdb' + str(m['show']['ids']['tvdb']))
-
         return show_list, show_ids
 
     def add_items(self, item_type, url, item_list=None, item_ids=None,
@@ -150,6 +154,7 @@ class Trakt(object):
         if item_type == 'movie':
             return self.add_movies(url, movie_list=item_list,
                                    movie_ids=item_ids, max_age=max_age)
-        elif item_type == 'tv':
+        if item_type == 'tv':
             return self.add_shows(url, show_list=item_list,
                                   show_ids=item_ids, max_age=max_age)
+        return None

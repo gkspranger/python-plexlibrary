@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
+"""
+The Utils Module
+"""
 from datetime import datetime
 
 import ruamel.yaml
 
-
-class Colors(object):
+class Colors():
+    """
+    Colors class
+    """
     RED = u'\033[1;31m'
     BLUE = u'\033[1;34m'
     CYAN = u'\033[1;36m'
@@ -14,7 +19,10 @@ class Colors(object):
     REVERSE = u'\033[;7m'
 
 
-class YAMLBase(object):
+class YAMLBase():
+    """
+    YAMLBase class
+    """
     def __init__(self, filename):
         self.filename = filename
 
@@ -29,7 +37,7 @@ class YAMLBase(object):
     def __getitem__(self, k):
         return self.data[k]
 
-    def __iter__(self, k):
+    def __iter__(self):
         return self.data.itervalues()
 
     def __setitem__(self, k, v):
@@ -38,14 +46,13 @@ class YAMLBase(object):
     def get(self, k, default=None):
         if k in self.data:
             return self.data[k]
-        else:
-            return default
+
+        return default
 
     def save(self):
         yaml = ruamel.yaml.YAML()
         with open(self.filename, 'w') as f:
             yaml.dump(self.data, f)
-
 
 def add_years(years, from_date=None):
     if from_date is None:

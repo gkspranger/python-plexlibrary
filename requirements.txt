@@ -1,6 +1,8 @@
 # pip install -r requirements.txt
-plexapi
-requests
-trakt
-ruamel.yaml
 lxml
+mypy
+plexapi
+pylint
+requests
+ruamel.yaml
+trakt

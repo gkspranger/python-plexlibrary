@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
-import requests
+"""
+The TVDB Module
+"""
 import json
+import requests
 
-
-class TheTVDB(object):
+class TheTVDB():
+    """
+    The TVDB Class
+    """
     token = None
 
     def __init__(self, username, api_key, user_key):
@@ -12,7 +17,9 @@ class TheTVDB(object):
         self.user_key = user_key
 
     def get_imdb_id(self, tvdb_id):
-        # TODO Cache
+        """
+        get item's IMDB ID
+        """
         if not self.token:
             self._refresh_token()
 
@@ -21,13 +28,13 @@ class TheTVDB(object):
         headers = {
             'Authorization': 'Bearer {token}'.format(token=self.token)
         }
-        r = requests.get(url, headers=headers)
+        resp = requests.get(url, headers=headers)
 
-        if r.status_code == 200:
-            tv_show = r.json()
+        if resp.status_code == 200:
+            tv_show = resp.json()
             return tv_show['data']['imdbId']
-        else:
-            return None
+
+        return None
 
     def _refresh_token(self):
         data = {
@@ -37,16 +44,16 @@ class TheTVDB(object):
         }
 
         url = "https://api.thetvdb.com/login"
-        r = requests.post(url, json=data)
+        resp = requests.post(url, json=data)
 
-        if r.status_code == 200:
-            result = r.json()
+        if resp.status_code == 200:
+            result = resp.json()
             self.token = result['token']
-        else:
-            return None
 
     def get_tvdb_from_imdb(self, imdb_id):
-        # TODO Cache
+        """
+        get item's TVDB ID from IMDB
+        """
         if not self.token:
             self._refresh_token()
 
@@ -58,11 +65,10 @@ class TheTVDB(object):
         headers = {
             'Authorization': 'Bearer {token}'.format(token=self.token)
         }
-        r = requests.get(url, headers=headers, params=params)
+        resp = requests.get(url, headers=headers, params=params)
 
-        if r.status_code == 200:
-            item = json.loads(r.text)
-
+        if resp.status_code == 200:
+            item = json.loads(resp.text)
             return item.get('data')[0] if item and item.get('data') else None
-        else:
-            return None
+
+        return None

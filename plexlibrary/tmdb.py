@@ -10,7 +10,10 @@ except ImportError:
 import requests
 
 
-class TMDb(object):
+class TMDb():
+    """
+    TMDB class
+    """
     api_key = None
     cache_file = None
     request_count = 0
@@ -66,8 +69,8 @@ class TMDb(object):
             cache[str(tmdb_id)] = item
             cache.close()
             return item.get('imdb_id')
-        else:
-            return None
+
+        return None
 
     def get_details(self, tmdb_id, library_type='movie'):
         if library_type not in ('movie', 'tv'):
@@ -114,8 +117,8 @@ class TMDb(object):
             cache[str(tmdb_id)] = item
             cache.close()
             return item
-        else:
-            return None
+
+        return None
 
     def get_tmdb_from_imdb(self, imdb_id, library_type):
         if library_type not in ('movie', 'tv'):
