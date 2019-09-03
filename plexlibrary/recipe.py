@@ -73,6 +73,27 @@ class Recipe():
 
         self.imdb = imdbutils.IMDb(self.tmdb, self.tvdb)
 
+    @classmethod
+    def _imdb_matches(cls, imdb_id, item):
+        matches = False
+        if imdb_id == str(item['id']):
+            matches = True
+        return matches
+
+    @classmethod
+    def _tmdb_matches(cls, tmdb_id, item):
+        matches = False
+        if tmdb_id == str(item['tmdb_id']):
+            matches = True
+        return matches
+
+    @classmethod
+    def _tvdb_matches(cls, tvdb_id, item):
+        matches = False
+        if tvdb_id == str(item['tvdb_id']):
+            matches = True
+        return matches
+
     def _run(self):
         item_list = []
         item_ids = []
@@ -157,9 +178,9 @@ class Recipe():
                     tvdb_id = (r.guid.split('thetvdb://')[1]
                                .split('?')[0].split('/')[0])
 
-                if ((imdb_id and imdb_id == str(item['id']))
-                        or (tmdb_id and tmdb_id == str(item['tmdb_id']))
-                        or (tvdb_id and tvdb_id == str(item['tvdb_id']))):
+                if self._imdb_matches(imdb_id, item) or \
+                    self._tmdb_matches(tmdb_id, item) or \
+                    self._tvdb_matches(tvdb_id, item):
                     if not match:
                         match = True
                         matching_total += 1
