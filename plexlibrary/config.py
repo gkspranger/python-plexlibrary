@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+Config module
+"""
 import os
 
 from utils import YAMLBase

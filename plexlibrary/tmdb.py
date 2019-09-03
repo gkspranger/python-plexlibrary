@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+TMDB module
+"""
 import json
 import shelve
 import time
@@ -26,6 +29,9 @@ class TMDb():
             self.cache_file = 'tmdb_details.shelve'
 
     def get_imdb_id(self, tmdb_id, library_type='movie'):
+        """
+        get the IMDB id
+        """
         if library_type not in ('movie', 'tv'):
             raise Exception("Library type should be 'movie' or 'tv'")
 
@@ -59,12 +65,12 @@ class TMDb():
         else:
             url = ("https://api.themoviedb.org/3/tv/{tmdb_id}/external_ids"
                    .format(tmdb_id=tmdb_id))
-        r = requests.get(url, params=params)
+        resp = requests.get(url, params=params)
 
         self.request_count += 1
 
-        if r.status_code == 200:
-            item = json.loads(r.text)
+        if resp.status_code == 200:
+            item = json.loads(resp.text)
             item['cached'] = int(time.time())
             cache[str(tmdb_id)] = item
             cache.close()
@@ -73,6 +79,9 @@ class TMDb():
         return None
 
     def get_details(self, tmdb_id, library_type='movie'):
+        """
+        get the details of the item
+        """
         if library_type not in ('movie', 'tv'):
             raise Exception("Library type should be 'movie' or 'tv'")
 
@@ -103,16 +112,16 @@ class TMDb():
         if library_type == 'movie':
             params['append_to_response'] = 'release_dates'
             url = "https://api.themoviedb.org/3/movie/{tmdb_id}".format(
-                    tmdb_id=tmdb_id)
+                tmdb_id=tmdb_id)
         else:
             url = "https://api.themoviedb.org/3/tv/{tmdb_id}".format(
-                    tmdb_id=tmdb_id)
-        r = requests.get(url, params=params)
+                tmdb_id=tmdb_id)
+        resp = requests.get(url, params=params)
 
         self.request_count += 1
 
-        if r.status_code == 200:
-            item = json.loads(r.text)
+        if resp.status_code == 200:
+            item = json.loads(resp.text)
             item['cached'] = int(time.time())
             cache[str(tmdb_id)] = item
             cache.close()
@@ -121,6 +130,9 @@ class TMDb():
         return None
 
     def get_tmdb_from_imdb(self, imdb_id, library_type):
+        """
+        get some tmdb data from the imdb details
+        """
         if library_type not in ('movie', 'tv'):
             raise Exception("Library type should be 'movie' or 'tv'")
 

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+TraktUtils module
+"""
 import datetime
 import json
 
@@ -76,11 +79,10 @@ class Trakt():
 
         return json.loads(response.content.decode('UTF-8', 'ignore'))
 
-    def add_movies(self, url, movie_list=None, movie_ids=None, max_age=0):
-        if not movie_list:
-            movie_list = []
-        if not movie_ids:
-            movie_ids = []
+    def add_movies(self, url, movie_list=[], movie_ids=[], max_age=0):
+        """
+        add movies to list
+        """
         max_date = add_years(max_age * -1)
         print(u"Retrieving the trakt list: {}".format(url))
         data = {}
@@ -98,7 +100,7 @@ class Trakt():
             # Skip old movies
             if max_age != 0 \
                     and (max_date > datetime.datetime.strptime(
-                        m['movie']['released'], '%Y-%m-%d')):
+                            m['movie']['released'], '%Y-%m-%d')):
                 continue
             movie_list.append({
                 'id': m['movie']['ids']['imdb'],
@@ -113,6 +115,9 @@ class Trakt():
         return movie_list, movie_ids
 
     def add_shows(self, url, show_list=None, show_ids=None, max_age=0):
+        """
+        add shows to list
+        """
         if not show_list:
             show_list = []
         if not show_ids:
@@ -151,6 +156,9 @@ class Trakt():
 
     def add_items(self, item_type, url, item_list=None, item_ids=None,
                   max_age=0):
+        """
+        add items to the list
+        """
         if item_type == 'movie':
             return self.add_movies(url, movie_list=item_list,
                                    movie_ids=item_ids, max_age=max_age)
