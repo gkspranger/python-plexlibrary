@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""recipe
+"""
+recipe module
 """
 
 import datetime
@@ -22,13 +23,16 @@ from recipes import RecipeParser
 from utils import Colors, add_years
 
 
-class Recipe(object):
+class Recipe():
+    """
+    recipe class
+    """
     plex = None
     trakt = None
     tmdb = None
     tvdb = None
 
-    def __init__(self, recipe_name, sort_only=False, config_file=None):
+    def __init__(self, recipe_name, config_file=None):
         self.recipe_name = recipe_name
 
         self.config = ConfigParser(config_file)
@@ -70,7 +74,7 @@ class Recipe(object):
         self.imdb = imdbutils.IMDb(self.tmdb, self.tvdb)
 
     def _run(self):
-        item_list = []  # TODO Replace with dict, scrap item_ids?
+        item_list = []
         item_ids = []
         force_imdb_id_match = False
 
@@ -104,11 +108,10 @@ class Recipe(object):
             try:
                 source_library = self.plex.server.library.section(
                     library_config['name'])
-            except:  # FIXME
+            except:
                 raise Exception("The '{}' library does not exist".format(
                     library_config['name']))
 
-            # FIXME: Hack until a new plexapi version is released. 3.0.4?
             if 'guid' not in source_library.ALLOWED_FILTERS:
                 source_library.ALLOWED_FILTERS += ('guid',)
 
@@ -152,8 +155,7 @@ class Recipe(object):
                     tmdb_id = r.guid.split('themoviedb://')[1].split('?')[0]
                 elif r.guid is not None and 'thetvdb://' in r.guid:
                     tvdb_id = (r.guid.split('thetvdb://')[1]
-                        .split('?')[0]
-                        .split('/')[0])
+                               .split('?')[0].split('/')[0])
 
                 if ((imdb_id and imdb_id == str(item['id']))
                         or (tmdb_id and tmdb_id == str(item['tmdb_id']))
@@ -188,7 +190,7 @@ class Recipe(object):
         except:
             print(u"Unable to create the new library folder "
                   u"'{folder}'.".format(
-                folder=self.recipe['new_library']['folder']))
+                      folder=self.recipe['new_library']['folder']))
             print(u"Exiting script.")
             return 0
 
@@ -215,12 +217,12 @@ class Recipe(object):
                             new_path = os.path.join(
                                 self.recipe['new_library']['folder'],
                                 file_name)
-                            dir = False
+                            drct = False
                         else:
                             new_path = os.path.join(
                                 self.recipe['new_library']['folder'],
                                 folder_name)
-                            dir = True
+                            drct = True
                             parent_path = os.path.dirname(
                                 os.path.abspath(new_path))
                             if not os.path.exists(parent_path):
@@ -237,11 +239,11 @@ class Recipe(object):
                                     and not os.listdir(new_path):
                                 os.rmdir(new_path)
 
-                        if (dir and not os.path.exists(new_path)) \
-                                or not dir and not os.path.isfile(new_path):
+                        if (drct and not os.path.exists(new_path)) \
+                                or not drct and not os.path.isfile(new_path):
                             try:
                                 if os.name == 'nt':
-                                    if dir:
+                                    if drct:
                                         subprocess.call(['mklink', '/D',
                                                          new_path, old_path],
                                                         shell=True)
@@ -250,7 +252,7 @@ class Recipe(object):
                                                          old_path_file],
                                                         shell=True)
                                 else:
-                                    if dir:
+                                    if drct:
                                         os.symlink(old_path, new_path)
                                     else:
                                         os.symlink(old_path_file, new_path)
@@ -276,11 +278,11 @@ class Recipe(object):
                         for library_config in self.source_library_config:
                             for f in library_config['folders']:
                                 if old_path.lower().startswith(f.lower()):
-                                    old_path = os.path.join(f,
-                                                            old_path.replace(
-                                                                f, '').strip(
-                                                                os.sep).split(
-                                                                os.sep)[0])
+                                    old_path = \
+                                        os.path.join(f, \
+                                            old_path.replace(f, \
+                                                '').strip(os.sep).split( \
+                                                    os.sep)[0])
                                     folder_name = os.path.relpath(old_path, f)
                                     break
                             else:
@@ -356,9 +358,8 @@ class Recipe(object):
             elif m.guid is not None and 'themoviedb://' in m.guid:
                 tmdb_id = m.guid.split('themoviedb://')[1].split('?')[0]
             elif m.guid is not None and 'thetvdb://' in m.guid:
-                tvdb_id = (m.guid.split('thetvdb://')[1]
-                    .split('?')[0]
-                    .split('/')[0])
+                tvdb_id = ( \
+                    m.guid.split('thetvdb://')[1].split('?')[0].split('/')[0])
             else:
                 imdb_id = None
 
@@ -425,7 +426,7 @@ class Recipe(object):
             # Remove items from the new library which no longer qualify
             print(u"Removing symlinks for items "
                   "which no longer qualify ".format(
-                library=self.recipe['new_library']['name']))
+                      library=self.recipe['new_library']['name']))
             count = 0
             updated_paths = []
             deleted_items = []
@@ -450,21 +451,21 @@ class Recipe(object):
                             new_path = os.path.join(
                                 self.recipe['new_library']['folder'],
                                 file_name)
-                            dir = False
+                            drct = False
                         else:
                             new_path = os.path.join(
                                 self.recipe['new_library']['folder'],
                                 folder_name)
-                            dir = True
+                            drct = True
 
-                        if (dir and os.path.exists(new_path)) or (
-                                not dir and os.path.isfile(new_path)):
+                        if (drct and os.path.exists(new_path)) or (
+                                not drct and os.path.isfile(new_path)):
                             try:
                                 if os.name == 'nt':
                                     # Python 3.2+ only
                                     if sys.version_info < (3, 2):
                                         assert os.path.islink(new_path)
-                                    if dir:
+                                    if drct:
                                         os.rmdir(new_path)
                                     else:
                                         os.remove(new_path)
@@ -613,9 +614,8 @@ class Recipe(object):
             elif m.guid is not None and 'themoviedb://' in m.guid:
                 tmdb_id = m.guid.split('themoviedb://')[1].split('?')[0]
             elif m.guid is not None and 'thetvdb://' in m.guid:
-                tvdb_id = (m.guid.split('thetvdb://')[1]
-                    .split('?')[0]
-                    .split('/')[0])
+                tvdb_id = ( \
+                    m.guid.split('thetvdb://')[1].split('?')[0].split('/')[0])
             else:
                 imdb_id = None
 
@@ -707,10 +707,8 @@ class Recipe(object):
     def weighted_sorting(self, item_list):
         def _get_non_theatrical_release(release_dates):
             # Returns earliest release date that is not theatrical
-            # TODO PREDB
             types = {}
             for country in release_dates.get('results', []):
-                # FIXME Look at others too?
                 if country['iso_3166_1'] != 'US':
                     continue
                 for d in country['release_dates']:
@@ -835,7 +833,6 @@ class Recipe(object):
                 net = u' '
             net += str(abs(i + 1 - m['original_idx'])).rjust(3)
             try:
-                # TODO
                 print(u"{} {:>3}: trnd:{:>3}, w_trnd:{:0<5}; vote:{}, "
                       "w_vote:{:0<5}; age:{:>4}, w_age:{:0<5}; w_rnd:{:0<5}; "
                       "w_cmb:{:0<5}; {} {}{}"
