@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-recipe module
+Recipe module
 """
 
 import datetime
