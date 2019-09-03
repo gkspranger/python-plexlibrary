@@ -94,7 +94,8 @@ When you're happy with the results, automate the recipe in cron_ or equivalent (
 Developing
 ----------
 .. code-block:: shell
-  docker build -t gkspranger/plexlibrary:latest .
+
+    docker build -t gkspranger/plexlibrary:latest .
 
 Planned features
 ----------------
