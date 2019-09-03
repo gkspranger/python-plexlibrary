@@ -6,7 +6,10 @@ COPY requirements.txt /plex/requirements.txt
 
 RUN /usr/local/bin/pip install -r /plex/requirements.txt
 
+COPY config.example.yml /plex/config.example.yml
 COPY recipes/ /plex/recipes/
 COPY plexlibrary/ /plex/plexlibrary/
 
-CMD ["/bin/bash"]
+ENTRYPOINT ["/usr/local/bin/python", "plexlibrary"]
+
+CMD ["--help"]
