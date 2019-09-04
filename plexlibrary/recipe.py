@@ -95,49 +95,110 @@ class Recipe():
             matches = True
         return matches
 
-    def _run(self):
+    def _get_source_list_urls(self):
         item_list = []
         item_ids = []
-        force_imdb_id_match = False
 
-        # Get the trakt lists
         for url in self.recipe['source_list_urls']:
             if 'api.trakt.tv' in url:
-                (item_list, item_ids) = self.trakt.add_items(
-                    self.library_type, url, item_list, item_ids,
-                    self.recipe['new_library']['max_age'] or 0)
+                item_list, item_ids = \
+                    self.trakt.add_items( \
+                        self.library_type, \
+                        url, \
+                        item_list, \
+                        item_ids, \
+                        self.recipe['new_library']['max_age'] \
+                        or 0)
             elif 'imdb.com/chart' in url:
-                (item_list, item_ids) = self.imdb.add_items(
-                    self.library_type, url, item_list, item_ids,
-                    self.recipe['new_library']['max_age'] or 0)
+                item_list, item_ids = \
+                    self.imdb.add_items( \
+                    self.library_type, \
+                    url, \
+                    item_list, \
+                    item_ids, \
+                    self.recipe['new_library']['max_age'] \
+                    or 0)
             else:
-                raise Exception("Unsupported source list: {url}".format(
+                raise Exception("Unsupported source list: {url}".format( \
                     url=url))
 
+        return item_list, item_ids
+
+    def _apply_weighted_sorting(self, item_list):
         if self.recipe['weighted_sorting']['enabled']:
             if self.config['tmdb']['api_key']:
-                print(u"Getting data from TMDb to add weighted sorting...")
+                print("""
+                    Getting data from TMDb to add weighted sorting...""")
                 item_list = self.weighted_sorting(item_list)
             else:
-                print(u"Warning: TMDd API key is required "
-                      u"for weighted sorting")
+                print("""
+                    Warning: TMDd API key is required for weighted sorting""")
 
-        # Get list of items from the Plex server
+        return item_list
+
+    def _get_source_libraries(self):
         source_libraries = []
+
         for library_config in self.source_library_config:
-            print(u"Trying to match with items from the '{}' library ".format(
-                library_config['name']))
+            print("""
+                Trying to match with items from the '{}' library""".format( \
+                    library_config['name']))
             try:
-                source_library = self.plex.server.library.section(
+                source_library = self.plex.server.library.section( \
                     library_config['name'])
             except:
-                raise Exception("The '{}' library does not exist".format(
-                    library_config['name']))
+                raise Exception("""
+                    The '{}' library does not exist""".format( \
+                        library_config['name']))
 
             if 'guid' not in source_library.ALLOWED_FILTERS:
                 source_library.ALLOWED_FILTERS += ('guid',)
 
             source_libraries.append(source_library)
+
+        return source_libraries
+
+    @classmethod
+    def _get_show_results(cls, source_libraries, show):
+        results = []
+
+        for source_library in source_libraries:
+            curr_result = source_library.search( \
+                guid='imdb://' + str(show['id']))
+            if not curr_result and show.get('tmdb_id'):
+                curr_result += source_library.search( \
+                    guid='themoviedb://' + str(show['tmdb_id']))
+            if not curr_result and show.get('tvdb_id'):
+                curr_result += source_library.search( \
+                    guid='thetvdb://' + str(show['tvdb_id']))
+            if curr_result:
+                results += curr_result
+
+        return results
+
+    @classmethod
+    def _get_show_ids(cls, show):
+        imdb_id, tmdb_id, tvdb_id = None, None, None
+
+        if show.guid is not None and 'imdb://' in show.guid:
+            imdb_id = show.guid.split( \
+                'imdb://')[1].split('?')[0]
+        elif show.guid is not None and 'themoviedb://' in show.guid:
+            tmdb_id = show.guid.split( \
+                'themoviedb://')[1].split('?')[0]
+        elif show.guid is not None and 'thetvdb://' in show.guid:
+            tvdb_id = (show.guid.split( \
+                'thetvdb://')[1].split('?')[0].split('/')[0])
+
+        return imdb_id, tmdb_id, tvdb_id
+
+
+    def _run(self):
+        force_imdb_id_match = False
+
+        item_list, item_ids = self._get_source_list_urls()
+        item_list = self._apply_weighted_sorting(item_list)
+        source_libraries = self._get_source_libraries()
 
         # Create a list of matching items
         matching_items = []
@@ -151,41 +212,25 @@ class Recipe():
             if max_count > 0 and matching_total >= max_count:
                 nonmatching_idx.append(i)
                 continue
-            res = []
-            for source_library in source_libraries:
-                lres = source_library.search(guid='imdb://' + str(item['id']))
-                if not lres and item.get('tmdb_id'):
-                    lres += source_library.search(
-                        guid='themoviedb://' + str(item['tmdb_id']))
-                if not lres and item.get('tvdb_id'):
-                    lres += source_library.search(
-                        guid='thetvdb://' + str(item['tvdb_id']))
-                if lres:
-                    res += lres
-            if not res:
+
+            results = self._get_show_results(source_libraries, item)
+            if not results:
                 missing_items.append((i, item))
                 nonmatching_idx.append(i)
                 continue
 
-            for r in res:
-                imdb_id = None
-                tmdb_id = None
-                tvdb_id = None
-                if r.guid is not None and 'imdb://' in r.guid:
-                    imdb_id = r.guid.split('imdb://')[1].split('?')[0]
-                elif r.guid is not None and 'themoviedb://' in r.guid:
-                    tmdb_id = r.guid.split('themoviedb://')[1].split('?')[0]
-                elif r.guid is not None and 'thetvdb://' in r.guid:
-                    tvdb_id = (r.guid.split('thetvdb://')[1]
-                               .split('?')[0].split('/')[0])
+            for result in results:
+                imdb_id, tmdb_id, tvdb_id = self._get_show_ids(result)
 
                 if self._imdb_matches(imdb_id, item) or \
                     self._tmdb_matches(tmdb_id, item) or \
                     self._tvdb_matches(tvdb_id, item):
+
                     if not match:
                         match = True
                         matching_total += 1
-                    matching_items.append(r)
+
+                    matching_items.append(result)
 
             if match:
                 if self.recipe['new_library']['sort_title']['absolute']:
@@ -203,8 +248,10 @@ class Recipe():
                 del item_list[i]
 
         # Create symlinks for all items in your library on the trakt watched
-        print(u"Creating symlinks for {count} matching items in the "
-              u"library...".format(count=matching_total))
+        print("""
+            Creating symlinks for {count} matching items in the 
+            library...""".format( \
+                count=matching_total))
 
         try:
             if not os.path.exists(self.recipe['new_library']['folder']):
@@ -227,10 +274,10 @@ class Recipe():
 
                     folder_name = ''
                     for library_config in self.source_library_config:
-                        for f in library_config['folders']:
-                            f = os.path.abspath(f)
-                            if old_path.lower().startswith(f.lower()):
-                                folder_name = os.path.relpath(old_path, f)
+                        for fldr in library_config['folders']:
+                            fldr = os.path.abspath(fldr)
+                            if old_path.lower().startswith(fldr.lower()):
+                                folder_name = os.path.relpath(old_path, fldr)
                                 break
                         else:
                             continue
@@ -250,8 +297,8 @@ class Recipe():
                             if not os.path.exists(parent_path):
                                 try:
                                     os.makedirs(parent_path)
-                                except OSError as e:
-                                    if e.errno == errno.EEXIST \
+                                except OSError as err:
+                                    if err.errno == errno.EEXIST \
                                             and os.path.isdir(parent_path):
                                         pass
                                     else:
@@ -281,9 +328,9 @@ class Recipe():
                                 count += 1
                                 new_items.append(movie)
                                 updated_paths.append(new_path)
-                            except Exception as e:
-                                print(u"Symlink failed for {path}: {e}".format(
-                                    path=new_path, e=e))
+                            except Exception as err:
+                                print(u"Symlink failed for {path}: {error}".format(
+                                    path=new_path, error=err))
         else:
             for tv_show in matching_items:
                 done = False
@@ -298,14 +345,14 @@ class Recipe():
 
                         folder_name = ''
                         for library_config in self.source_library_config:
-                            for f in library_config['folders']:
-                                if old_path.lower().startswith(f.lower()):
+                            for fldr in library_config['folders']:
+                                if old_path.lower().startswith(fldr.lower()):
                                     old_path = \
-                                        os.path.join(f, \
-                                            old_path.replace(f, \
+                                        os.path.join(fldr, \
+                                            old_path.replace(fldr, \
                                                 '').strip(os.sep).split( \
                                                     os.sep)[0])
-                                    folder_name = os.path.relpath(old_path, f)
+                                    folder_name = os.path.relpath(old_path, fldr)
                                     break
                             else:
                                 continue
@@ -327,9 +374,9 @@ class Recipe():
                                     updated_paths.append(new_path)
                                     done = True
                                     break
-                                except Exception as e:
-                                    print(u"Symlink failed for {path}: {e}"
-                                          .format(path=new_path, e=e))
+                                except Exception as err:
+                                    print(u"Symlink failed for {path}: {error}"
+                                          .format(path=new_path, error=err))
                             else:
                                 done = True
                                 break
@@ -371,26 +418,26 @@ class Recipe():
 
         # Create a dictionary of {imdb_id: item}
         imdb_map = {}
-        for m in all_new_items:
+        for mymovie in all_new_items:
             imdb_id = None
             tmdb_id = None
             tvdb_id = None
-            if m.guid is not None and 'imdb://' in m.guid:
-                imdb_id = m.guid.split('imdb://')[1].split('?')[0]
-            elif m.guid is not None and 'themoviedb://' in m.guid:
-                tmdb_id = m.guid.split('themoviedb://')[1].split('?')[0]
-            elif m.guid is not None and 'thetvdb://' in m.guid:
+            if mymovie.guid is not None and 'imdb://' in mymovie.guid:
+                imdb_id = mymovie.guid.split('imdb://')[1].split('?')[0]
+            elif mymovie.guid is not None and 'themoviedb://' in mymovie.guid:
+                tmdb_id = mymovie.guid.split('themoviedb://')[1].split('?')[0]
+            elif mymovie.guid is not None and 'thetvdb://' in mymovie.guid:
                 tvdb_id = ( \
-                    m.guid.split('thetvdb://')[1].split('?')[0].split('/')[0])
+                    mymovie.guid.split('thetvdb://')[1].split('?')[0].split('/')[0])
             else:
                 imdb_id = None
 
             if imdb_id and str(imdb_id) in item_ids:
-                imdb_map[imdb_id] = m
+                imdb_map[imdb_id] = mymovie
             elif tmdb_id and ('tmdb' + str(tmdb_id)) in item_ids:
-                imdb_map['tmdb' + str(tmdb_id)] = m
+                imdb_map['tmdb' + str(tmdb_id)] = mymovie
             elif tvdb_id and ('tvdb' + str(tvdb_id)) in item_ids:
-                imdb_map['tvdb' + str(tvdb_id)] = m
+                imdb_map['tvdb' + str(tvdb_id)] = mymovie
             elif force_imdb_id_match:
                 # Only IMDB ID found for some items
                 if tmdb_id:
@@ -398,46 +445,46 @@ class Recipe():
                 elif tvdb_id:
                     imdb_id = self.tvdb.get_imdb_id(tvdb_id)
                 if imdb_id and str(imdb_id) in item_ids:
-                    imdb_map[imdb_id] = m
+                    imdb_map[imdb_id] = mymovie
                 else:
-                    imdb_map[m.ratingKey] = m
+                    imdb_map[mymovie.ratingKey] = mymovie
             else:
-                imdb_map[m.ratingKey] = m
+                imdb_map[mymovie.ratingKey] = mymovie
 
         # Modify the sort titles
         if self.recipe['new_library']['sort']:
             print(u"Setting the sort titles for the '{}' library...".format(
                 self.recipe['new_library']['name']))
         if self.recipe['new_library']['sort_title']['absolute']:
-            for i, m in enumerate(item_list):
-                item = imdb_map.pop(m['id'], None)
+            for i, mymovie in enumerate(item_list):
+                item = imdb_map.pop(mymovie['id'], None)
                 if not item:
-                    item = imdb_map.pop('tmdb' + str(m.get('tmdb_id', '')),
+                    item = imdb_map.pop('tmdb' + str(mymovie.get('tmdb_id', '')),
                                         None)
                 if not item:
-                    item = imdb_map.pop('tvdb' + str(m.get('tvdb_id', '')),
+                    item = imdb_map.pop('tvdb' + str(mymovie.get('tvdb_id', '')),
                                         None)
                 if item and self.recipe['new_library']['sort']:
                     self.plex.set_sort_title(
-                        new_library.key, item.ratingKey, i + 1, m['title'],
+                        new_library.key, item.ratingKey, i + 1, mymovie['title'],
                         self.library_type,
                         self.recipe['new_library']['sort_title']['format'],
                         self.recipe['new_library']['sort_title']['visible']
                     )
         else:
             i = 0
-            for m in item_list:
-                item = imdb_map.pop(m['id'], None)
+            for mymovie in item_list:
+                item = imdb_map.pop(mymovie['id'], None)
                 if not item:
-                    item = imdb_map.pop('tmdb' + str(m.get('tmdb_id', '')),
+                    item = imdb_map.pop('tmdb' + str(mymovie.get('tmdb_id', '')),
                                         None)
                 if not item:
-                    item = imdb_map.pop('tvdb' + str(m.get('tvdb_id', '')),
+                    item = imdb_map.pop('tvdb' + str(mymovie.get('tvdb_id', '')),
                                         None)
                 if item and self.recipe['new_library']['sort']:
                     i += 1
                     self.plex.set_sort_title(
-                        new_library.key, item.ratingKey, i, m['title'],
+                        new_library.key, item.ratingKey, i, mymovie['title'],
                         self.library_type,
                         self.recipe['new_library']['sort_title']['format'],
                         self.recipe['new_library']['sort_title']['visible']
@@ -497,9 +544,9 @@ class Recipe():
                                 count += 1
                                 deleted_items.append(movie)
                                 updated_paths.append(new_path)
-                            except Exception as e:
+                            except Exception as err:
                                 print(u"Remove symlink failed for "
-                                      "{path}: {e}".format(path=new_path, e=e))
+                                      "{path}: {error}".format(path=new_path, error=err))
             else:
                 for tv_show in imdb_map.values():
                     done = False
@@ -542,10 +589,10 @@ class Recipe():
                                     updated_paths.append(new_path)
                                     done = True
                                     break
-                                except Exception as e:
+                                except Exception as err:
                                     print(u"Remove symlink failed for "
                                           "{path}: {e}".format(path=new_path,
-                                                               e=e))
+                                                               err=err))
                             else:
                                 done = True
                                 break

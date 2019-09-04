@@ -14,10 +14,8 @@ Credit:
     https://gist.github.com/JonnyWong16/f5b9af386ea58e19bf18c09f2681df23
     by /u/SwiftPanda16
 """
-
 import argparse
 import sys
-
 import recipes
 from recipe import Recipe
 
@@ -65,7 +63,6 @@ def main():
     recipe.run(args.sort_only)
 
     print("Done!")
-
 
 if __name__ == "__main__":
     main()
